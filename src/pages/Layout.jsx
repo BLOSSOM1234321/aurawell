@@ -180,6 +180,12 @@ export default function Layout({ children, currentPageName }) {
                 :root {
                   ${themes[activeTheme] || themes.sunset}
                 }
+
+                /* iOS Safe Area Support */
+                body {
+                  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+                }
+
                 .bg-main { background-color: rgb(var(--bg-main)); }
                 .bg-secondary { background-color: rgb(var(--bg-secondary)); }
                 .text-primary { color: rgb(var(--text-primary)); }
@@ -196,14 +202,23 @@ export default function Layout({ children, currentPageName }) {
                 .sage-green-background {
                   background-color: #F8E2E7;
                 }
+
+                /* Safe area padding for iOS */
+                .safe-area-top {
+                  padding-top: env(safe-area-inset-top);
+                }
+
+                .safe-area-bottom {
+                  padding-bottom: env(safe-area-inset-bottom);
+                }
               `}
             </style>
             
             {/* Main App Container */}
-            <div className={`min-h-screen text-primary flex flex-col ${!isSpecialBackgroundPage ? 'sage-green-background' : 'bg-main'}`}>
-              
+            <div className={`min-h-screen text-primary flex flex-col ${!isSpecialBackgroundPage ? 'sage-green-background' : 'bg-main'}`} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+
               {/* Content Area - takes remaining space above bottom nav */}
-              <main className="flex-1 pb-20 overflow-auto">
+              <main className="flex-1 overflow-auto" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))', paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
                  <AnimatePresence mode="wait">
                   <motion.div
                     key={location.pathname}
@@ -220,7 +235,7 @@ export default function Layout({ children, currentPageName }) {
               </main>
 
               {/* Bottom Navigation */}
-              <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-light shadow-lg z-50">
+              <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-light shadow-lg z-50" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
                 <div className="flex items-center justify-around h-16 max-w-md mx-auto">
                   {navigationItems.map((item) => {
                     const isActive = currentRoute === item.route;

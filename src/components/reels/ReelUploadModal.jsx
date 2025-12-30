@@ -10,7 +10,7 @@ import { X, Upload, Video } from "lucide-react";
 import { toast } from "sonner";
 import { Reel } from "@/api/entities";
 import { User } from "@/api/entities";
-import { base44 } from "@/api/base44Client";
+import { UploadFile } from "@/api/integrations";
 
 const categories = [
   { value: "anxiety", label: "Anxiety" },
@@ -68,7 +68,8 @@ export default function ReelUploadModal({ onClose, onComplete }) {
 
       // Upload video
       toast.info("Uploading video...");
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: videoFile });
+      const uploadResult = await UploadFile({ file: videoFile });
+      const file_url = uploadResult?.file_url || '';
 
       // Parse hashtags
       const hashtags = formData.hashtags

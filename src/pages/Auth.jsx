@@ -6,13 +6,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Bird, Mail, Lock, User, Heart, Stethoscope } from "lucide-react";
 import { createPageUrl } from "@/utils";
+import api from "@/api/client";
+import { toast } from "sonner";
 
 export default function Auth() {
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
-  const [accountType, setAccountType] = useState("user"); // "user" or "therapist"
+  const [accountType, setAccountType] = useState("regular"); // "regular" or "therapist"
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: "",
+    username: "",
+    fullName: "",
     email: "",
     password: "",
   });
@@ -30,8 +34,16 @@ export default function Auth() {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!isLogin && !formData.name.trim()) {
-      newErrors.name = "Name is required";
+    if (!isLogin) {
+      if (!formData.username.trim()) {
+        newErrors.username = "Username is required";
+      } else if (formData.username.length < 3) {
+        newErrors.username = "Username must be at least 3 characters";
+      }
+
+      if (!formData.fullName.trim()) {
+        newErrors.fullName = "Name is required";
+      }
     }
 
     if (!formData.email.trim()) {
@@ -50,66 +62,72 @@ export default function Auth() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validateForm()) {
       return;
     }
 
-    if (isLogin) {
-      // Login: Check if user exists in localStorage
-      const users = JSON.parse(localStorage.getItem("aurawell_users") || "[]");
-      const user = users.find(
-        (u) => u.email === formData.email && u.password === formData.password
-      );
+    setIsLoading(true);
 
-      if (user) {
-        // Set current user
-        localStorage.setItem("aurawell_current_user", JSON.stringify(user));
-        navigate(createPageUrl("Dashboard"));
+    try {
+      if (isLogin) {
+        // Login
+        const response = await api.login({
+          email: formData.email,
+          password: formData.password,
+        });
+
+        if (response.success && response.user) {
+          // Store user data
+          localStorage.setItem("aurawell_current_user", JSON.stringify(response.user));
+
+          toast.success("Welcome back!");
+          navigate(createPageUrl("Dashboard"));
+        }
       } else {
+        // Sign up
+        const response = await api.signup({
+          email: formData.email,
+          password: formData.password,
+          username: formData.username,
+          fullName: formData.fullName,
+          userType: accountType,
+        });
+
+        if (response.success && response.user) {
+          // Store user data
+          localStorage.setItem("aurawell_current_user", JSON.stringify(response.user));
+
+          toast.success("Account created successfully!");
+
+          // Navigate based on account type
+          if (accountType === "therapist") {
+            navigate(createPageUrl("TherapistOnboarding"));
+          } else {
+            navigate(createPageUrl("Dashboard"));
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Auth error:", error);
+
+      if (error.message.includes("already exists")) {
+        setErrors({ email: "Email or username already registered" });
+      } else if (error.message.includes("Invalid credentials")) {
         setErrors({ email: "Invalid email or password" });
-      }
-    } else {
-      // Sign up: Create new user
-      const users = JSON.parse(localStorage.getItem("aurawell_users") || "[]");
-
-      // Check if email already exists
-      if (users.some((u) => u.email === formData.email)) {
-        setErrors({ email: "Email already registered" });
-        return;
-      }
-
-      // Create new user
-      const newUser = {
-        id: Date.now().toString(),
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        user_type: accountType, // "user" or "therapist"
-        verification_status: accountType === "therapist" ? "pending" : "verified",
-        onboardingComplete: accountType === "user", // Regular users skip onboarding
-        createdAt: new Date().toISOString(),
-      };
-
-      users.push(newUser);
-      localStorage.setItem("aurawell_users", JSON.stringify(users));
-      localStorage.setItem("aurawell_current_user", JSON.stringify(newUser));
-
-      // Navigate based on account type
-      if (accountType === "therapist") {
-        // Redirect to therapist onboarding
-        navigate(createPageUrl("TherapistOnboarding"));
       } else {
-        navigate(createPageUrl("Dashboard"));
+        toast.error(error.message || "Authentication failed. Please try again.");
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const switchMode = () => {
     setIsLogin(!isLogin);
-    setFormData({ name: "", email: "", password: "" });
+    setFormData({ username: "", fullName: "", email: "", password: "" });
     setErrors({});
   };
 
@@ -180,15 +198,15 @@ export default function Auth() {
                       <div className="grid grid-cols-2 gap-3">
                         <button
                           type="button"
-                          onClick={() => setAccountType("user")}
+                          onClick={() => setAccountType("regular")}
                           className={`p-4 rounded-lg border-2 transition-all ${
-                            accountType === "user"
+                            accountType === "regular"
                               ? "border-purple-500 bg-purple-50"
                               : "border-gray-200 hover:border-gray-300"
                           }`}
                         >
-                          <User className="w-6 h-6 mx-auto mb-2" style={{ color: accountType === "user" ? "#5C4B99" : "#9CA3AF" }} />
-                          <p className={`text-sm font-medium ${accountType === "user" ? "text-purple-700" : "text-gray-600"}`}>
+                          <User className="w-6 h-6 mx-auto mb-2" style={{ color: accountType === "regular" ? "#5C4B99" : "#9CA3AF" }} />
+                          <p className={`text-sm font-medium ${accountType === "regular" ? "text-purple-700" : "text-gray-600"}`}>
                             User
                           </p>
                         </button>
@@ -210,109 +228,126 @@ export default function Auth() {
                     </motion.div>
 
                     <motion.div
-                      key="name"
+                      key="username"
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Name
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Username
                       </label>
                       <div className="relative">
                         <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <Input
+                          name="username"
                           type="text"
-                          name="name"
-                          value={formData.name}
+                          placeholder="Choose a username"
+                          value={formData.username}
                           onChange={handleChange}
-                          placeholder="Enter your name"
-                          className="pl-10"
+                          className={`pl-10 ${errors.username ? "border-red-500" : ""}`}
                         />
                       </div>
-                      {errors.name && (
-                        <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+                      {errors.username && (
+                        <p className="text-red-500 text-sm mt-1">{errors.username}</p>
+                      )}
+                    </motion.div>
+
+                    <motion.div
+                      key="fullName"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Full Name
+                      </label>
+                      <div className="relative">
+                        <Heart className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <Input
+                          name="fullName"
+                          type="text"
+                          placeholder="Your full name"
+                          value={formData.fullName}
+                          onChange={handleChange}
+                          className={`pl-10 ${errors.fullName ? "border-red-500" : ""}`}
+                        />
+                      </div>
+                      {errors.fullName && (
+                        <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>
                       )}
                     </motion.div>
                   </>
                 )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Input
+                      name="email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={formData.email}
+                      onChange={handleChange}
+                      className={`pl-10 ${errors.email ? "border-red-500" : ""}`}
+                    />
+                  </div>
+                  {errors.email && (
+                    <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Input
+                      name="password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={formData.password}
+                      onChange={handleChange}
+                      className={`pl-10 ${errors.password ? "border-red-500" : ""}`}
+                    />
+                  </div>
+                  {errors.password && (
+                    <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+                  )}
+                </div>
               </AnimatePresence>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <Input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="Enter your email"
-                    className="pl-10"
-                  />
-                </div>
-                {errors.email && (
-                  <p className="text-red-500 text-xs mt-1">{errors.email}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <Input
-                    type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder="Enter your password"
-                    className="pl-10"
-                  />
-                </div>
-                {errors.password && (
-                  <p className="text-red-500 text-xs mt-1">{errors.password}</p>
-                )}
-              </div>
 
               <Button
                 type="submit"
-                className="w-full text-white"
-                style={{ backgroundColor: "#5C4B99" }}
+                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                disabled={isLoading}
               >
-                {isLogin ? "Login" : "Create Account"}
+                {isLoading ? "Please wait..." : isLogin ? "Login" : "Create Account"}
               </Button>
             </form>
 
-            {/* Footer Message */}
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
-                {isLogin ? "Don't have an account? " : "Already have an account? "}
+            {/* Quick Test Login */}
+            {isLogin && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <p className="text-xs text-gray-500 text-center mb-2">Quick test login:</p>
                 <button
-                  onClick={switchMode}
-                  className="font-medium hover:underline"
-                  style={{ color: "#5C4B99" }}
+                  type="button"
+                  onClick={() => {
+                    setFormData({ ...formData, email: "user@test.com", password: "password123" });
+                  }}
+                  className="text-xs text-purple-600 hover:text-purple-700 w-full text-center"
                 >
-                  {isLogin ? "Sign Up" : "Login"}
+                  Use test account (user@test.com / password123)
                 </button>
-              </p>
-            </div>
+              </div>
+            )}
           </CardContent>
         </Card>
-
-        {/* Decorative Message */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="text-center mt-6 flex items-center justify-center gap-2 text-gray-600"
-        >
-          <Heart className="w-4 h-4" style={{ color: "#5C4B99" }} />
-          <p className="text-sm">Take the first step towards inner peace</p>
-        </motion.div>
       </motion.div>
     </div>
   );

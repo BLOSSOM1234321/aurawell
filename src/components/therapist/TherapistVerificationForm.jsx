@@ -10,7 +10,7 @@ import { Upload, CheckCircle, Bird, X } from "lucide-react";
 import { toast } from "sonner";
 import { TherapistProfile } from "@/api/entities";
 import { User } from "@/api/entities";
-import { base44 } from "@/api/base44Client";
+import { UploadFile } from "@/api/integrations";
 
 const therapeuticApproachesList = [
   "Cognitive Behavioral Therapy (CBT)",
@@ -115,7 +115,8 @@ export default function TherapistVerificationForm({ onComplete }) {
     setIsSubmitting(true);
     try {
       // Upload certification file
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: certificationFile });
+      const uploadResult = await UploadFile({ file: certificationFile });
+      const file_url = uploadResult?.file_url || '';
 
       // Create therapist profile
       await TherapistProfile.create({

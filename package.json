@@ -1,16 +1,19 @@
 {
-  "name": "base44-app",
+  "name": "aurawell-app",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "vite",
+    "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\" --names \"backend,frontend\" --prefix-colors \"blue,green\"",
+    "start": "npm run dev:all",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@base44/sdk": "^0.1.2",
     "@capacitor/android": "^8.0.0",
     "@capacitor/cli": "^8.0.0",
     "@capacitor/core": "^8.0.0",
@@ -75,6 +78,7 @@
     "@types/react-dom": "^18.2.22",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "concurrently": "^8.2.2",
     "eslint": "^9.19.0",
     "eslint-plugin-react": "^7.37.4",
     "eslint-plugin-react-hooks": "^5.0.0",
