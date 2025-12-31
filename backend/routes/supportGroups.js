@@ -12,10 +12,12 @@ const router = express.Router();
 router.get('/', optionalAuth, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, name, description, category, icon, color, member_count, is_active, created_at
+      `SELECT id, name, description, category, group_type, icon, color, member_count, is_active, created_at
        FROM support_groups
        WHERE is_active = true
-       ORDER BY name ASC`
+       ORDER BY
+         CASE WHEN group_type = 'support' THEN 0 ELSE 1 END,
+         name ASC`
     );
 
     res.json({
@@ -42,7 +44,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
     const { id } = req.params;
 
     const result = await pool.query(
-      `SELECT id, name, description, category, icon, color, member_count, is_active, created_at
+      `SELECT id, name, description, category, group_type, icon, color, member_count, is_active, created_at
        FROM support_groups
        WHERE id = $1`,
       [id]

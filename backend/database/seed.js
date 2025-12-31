@@ -18,55 +18,117 @@ async function seedDatabase() {
 
     const supportGroups = [
       {
+        name: 'Schizophrenia Support',
+        description: 'Understanding and support for those living with schizophrenia and related conditions',
+        category: 'schizophrenia',
+        group_type: 'support',
+        icon: '🧠',
+        color: '#6B7280'
+      },
+      {
+        name: 'Bipolar & Mood Disorder Support',
+        description: 'A safe space for navigating bipolar disorder and other mood disorders together',
+        category: 'bipolar',
+        group_type: 'support',
+        icon: '⚖️',
+        color: '#8B5CF6'
+      },
+      {
+        name: 'Borderline Personality Disorder (BPD) Support',
+        description: 'A supportive community for those with BPD, focusing on DBT skills and emotional regulation',
+        category: 'bpd',
+        group_type: 'support',
+        icon: '💗',
+        color: '#EC4899'
+      },
+      {
+        name: "Men's Mental Wellness",
+        description: 'A safe space for men to discuss mental health, break down stigma, and support each other',
+        category: 'mens_health',
+        group_type: 'support',
+        icon: '👤',
+        color: '#6B7280'
+      },
+      {
+        name: "Women's Mental Wellness",
+        description: 'Empowering women through shared experiences, support, and mental health advocacy',
+        category: 'womens_health',
+        group_type: 'support',
+        icon: '💗',
+        color: '#EC4899'
+      },
+      {
         name: 'Anxiety Support',
-        description: 'A safe space for those dealing with anxiety and panic',
+        description: 'Connect with others, share coping strategies for anxiety in a supportive environment',
         category: 'anxiety',
-        icon: 'brain',
-        color: 'blue'
+        group_type: 'support',
+        icon: '😰',
+        color: '#3B82F6'
       },
       {
-        name: 'Depression Warriors',
-        description: 'Support for those battling depression',
+        name: 'Chronic Illness & Mental Health',
+        description: 'Support for those managing chronic illness alongside mental health challenges',
+        category: 'chronic_illness',
+        group_type: 'support',
+        icon: '💚',
+        color: '#10B981'
+      },
+      {
+        name: 'ADHD & Neurodivergence Support',
+        description: 'Support and strategies for ADHD and neurodivergent individuals navigating daily life',
+        category: 'adhd',
+        group_type: 'support',
+        icon: '⚡',
+        color: '#F59E0B'
+      },
+      {
+        name: 'Depression Support',
+        description: 'A compassionate community for those navigating depression and seeking hope',
         category: 'depression',
-        icon: 'heart',
-        color: 'purple'
+        group_type: 'support',
+        icon: '🌧️',
+        color: '#6366F1'
       },
       {
-        name: 'Trauma Healing',
-        description: 'For survivors of trauma seeking healing and connection',
+        name: 'Trauma Recovery & PTSD',
+        description: 'Healing together through shared experiences and trauma-informed support',
         category: 'trauma',
-        icon: 'shield',
-        color: 'green'
+        group_type: 'support',
+        icon: '❤️‍🩹',
+        color: '#EF4444'
       },
       {
-        name: 'PTSD Recovery',
-        description: 'Community for PTSD recovery and support',
-        category: 'ptsd',
-        icon: 'umbrella',
-        color: 'teal'
+        name: 'Mindfulness Meditation Circle',
+        description: 'Daily meditation practice and mindfulness discussions',
+        category: 'mindfulness',
+        group_type: 'community',
+        icon: '🙏',
+        color: '#A78BFA'
       },
       {
-        name: 'Grief & Loss',
-        description: 'Support through grief and loss',
-        category: 'grief',
-        icon: 'candle',
-        color: 'gray'
+        name: 'New Parents Support',
+        description: 'Navigating parenthood through the journey of parenthood',
+        category: 'parenting',
+        group_type: 'community',
+        icon: '👶',
+        color: '#FBBF24'
       },
       {
-        name: 'Self-Care Circle',
-        description: 'Focusing on self-care and wellness',
-        category: 'wellness',
-        icon: 'flower',
-        color: 'pink'
+        name: 'Creative Expression Group',
+        description: 'Art, writing, and creativity as healing',
+        category: 'creativity',
+        group_type: 'community',
+        icon: '🎨',
+        color: '#F97316'
       }
     ];
 
     for (const group of supportGroups) {
       await pool.query(
-        `INSERT INTO support_groups (name, description, category, icon, color)
-         VALUES ($1, $2, $3, $4, $5)
+        `INSERT INTO support_groups (name, description, category, group_type, icon, color)
+         VALUES ($1, $2, $3, $4, $5, $6)
          ON CONFLICT DO NOTHING`,
-        [group.name, group.description, group.category, group.icon, group.color]
+        [group.name, group.description, group.category, group.group_type, group.icon, group.color]
       );
     }
     console.log('✅ Support groups seeded\n');

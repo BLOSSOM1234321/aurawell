@@ -1,7 +1,7 @@
 // AuraWell Custom API Client
 // Replaces Base44 SDK completely
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_URL = import.meta.env.VITE_API_URL || 'http://50.28.40.155';
 
 class APIClient {
   constructor() {

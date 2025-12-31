@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS support_groups (
   name VARCHAR(255) NOT NULL,
   description TEXT,
   category VARCHAR(100), -- 'anxiety', 'depression', 'trauma', etc.
+  group_type VARCHAR(50) DEFAULT 'support', -- 'support' or 'community'
   icon VARCHAR(50),
   color VARCHAR(50),
   member_count INTEGER DEFAULT 0,
