@@ -163,7 +163,7 @@ export default function SupportGroupStageSelection() {
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-1">How Support Rooms Work</h3>
                   <p className="text-sm text-gray-600">
-                    You'll be automatically placed in a private room with up to 10 members at your experience level.
+                    You'll be automatically placed in a private room with others at your experience level.
                     This creates an intimate, safe space for meaningful connections and support.
                   </p>
                 </div>
@@ -191,7 +191,7 @@ export default function SupportGroupStageSelection() {
           )}
 
           {/* Stage Selection Cards */}
-          {supportGroup.enabledStages?.map((stage) => {
+          {['beginner', 'intermediate', 'advanced'].map((stage) => {
             const stageInfo = STAGE_INFO[stage];
             if (!stageInfo) return null;
 

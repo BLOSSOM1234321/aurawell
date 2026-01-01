@@ -211,7 +211,7 @@ export default function SupportRoomChat() {
                 </h1>
               </div>
               <p className="text-sm text-white/90">
-                Room #{room.roomNumber} • {room.memberCount}/{room.maxMembers} members
+                {room.stage.charAt(0).toUpperCase() + room.stage.slice(1)} Support Room
               </p>
             </div>
 
