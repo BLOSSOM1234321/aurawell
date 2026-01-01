@@ -148,13 +148,14 @@ export const SupportRoomMember = {
 // ============================================
 export const SupportRoomMessage = {
   async findMany(options = {}) {
-    if (!options.where || !options.where.room_id) {
-      console.error('SupportRoomMessage.findMany requires room_id');
+    const roomId = options.where?.roomId || options.where?.room_id;
+    if (!roomId) {
+      console.error('SupportRoomMessage.findMany requires roomId');
       return [];
     }
 
     try {
-      const response = await api.getMessages(options.where.room_id, 50, 0);
+      const response = await api.getMessages(roomId, 50, 0);
       return response.data || [];
     } catch (error) {
       console.error('SupportRoomMessage.findMany error:', error);
@@ -164,7 +165,9 @@ export const SupportRoomMessage = {
 
   async create(data) {
     try {
-      const response = await api.sendMessage(data.room_id, data.content);
+      const roomId = data.roomId || data.room_id;
+      const content = data.text || data.content;
+      const response = await api.sendMessage(roomId, content);
       return response.data || null;
     } catch (error) {
       console.error('SupportRoomMessage.create error:', error);
