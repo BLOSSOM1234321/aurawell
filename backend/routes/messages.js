@@ -15,7 +15,7 @@ router.get('/:roomId', protect, async (req, res) => {
     const result = await pool.query(
       `SELECT m.id, m.room_id as "roomId", m.user_id as "userId",
               m.content as text, m.created_at as "createdAt", m.updated_at as "updatedAt",
-              u.username, u.avatar_url, u.name
+              u.username, u.avatar_url, u.full_name as name
        FROM messages m
        JOIN users u ON m.user_id = u.id
        WHERE m.room_id = $1 AND m.is_deleted = false
@@ -55,7 +55,7 @@ router.post('/', protect, async (req, res) => {
       ...result.rows[0],
       user: {
         id: req.user.id,
-        name: req.user.name,
+        name: req.user.full_name,
         username: req.user.username
       }
     };
