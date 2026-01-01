@@ -14,7 +14,7 @@ const GroupCard = ({ group, index }) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.05 + index * 0.05, duration: 0.3 }}
     >
-      <Link to={createPageUrl(`Group/${group.id}`)}>
+      <Link to={`/support-group/${group.id}`}>
         <Card className="bg-white border border-gray-200 shadow-sm cursor-pointer hover:shadow-md transition-all duration-200 h-full">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
