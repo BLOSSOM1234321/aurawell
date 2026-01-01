@@ -7,6 +7,8 @@ import { toast } from 'sonner';
 import { SupportGroup } from '@/api/entities';
 import { joinStageRoom } from '@/api/supportRooms';
 import BackHeader from '@/components/navigation/BackHeader';
+import api from '@/api/client';
+import { format } from 'date-fns';
 
 const STAGE_INFO = {
   beginner: {
@@ -45,6 +47,7 @@ export default function SupportGroupStageSelection() {
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(null); // Track which stage is being joined
   const [user, setUser] = useState(null);
+  const [lockStatus, setLockStatus] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -63,6 +66,12 @@ export default function SupportGroupStageSelection() {
       // Load support group
       const group = await SupportGroup.findById(groupId);
       setSupportGroup(group);
+
+      // Check stage lock status
+      const lockResponse = await api.getStageLockStatus(groupId);
+      if (lockResponse.success && lockResponse.isLocked) {
+        setLockStatus(lockResponse.data);
+      }
     } catch (error) {
       console.error('Failed to load support group:', error);
       toast.error('Failed to load support group');
@@ -162,6 +171,25 @@ export default function SupportGroupStageSelection() {
             </CardContent>
           </Card>
 
+          {/* Lock Warning Card */}
+          {lockStatus && lockStatus.is_locked && (
+            <Card className="bg-amber-50 border border-amber-200">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-amber-600 mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-amber-900 mb-1">Stage Lock Active</h3>
+                    <p className="text-sm text-amber-800">
+                      You're currently locked to the <strong>{lockStatus.stage}</strong> stage.
+                      You can switch stages in {Math.ceil(lockStatus.days_remaining)} days
+                      (until {format(new Date(lockStatus.locked_until), 'MMM d, yyyy')}).
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Stage Selection Cards */}
           {supportGroup.enabledStages?.map((stage) => {
             const stageInfo = STAGE_INFO[stage];
@@ -169,6 +197,7 @@ export default function SupportGroupStageSelection() {
 
             const Icon = stageInfo.icon;
             const isJoining = joining === stage;
+            const isLocked = lockStatus?.is_locked && lockStatus?.stage !== stage;
 
             return (
               <Card
@@ -190,14 +219,19 @@ export default function SupportGroupStageSelection() {
 
                   <Button
                     onClick={() => handleStageSelect(stage)}
-                    disabled={isJoining}
-                    className={`w-full ${stageInfo.textColor} bg-white hover:${stageInfo.bgColor} border-2 ${stageInfo.borderColor} text-lg font-semibold py-6`}
+                    disabled={isJoining || isLocked}
+                    className={`w-full ${stageInfo.textColor} bg-white hover:${stageInfo.bgColor} border-2 ${stageInfo.borderColor} text-lg font-semibold py-6 ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
                     variant="outline"
                   >
                     {isJoining ? (
                       <>
                         <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                         Finding Your Room...
+                      </>
+                    ) : isLocked ? (
+                      <>
+                        <AlertCircle className="w-5 h-5 mr-2" />
+                        Locked until {format(new Date(lockStatus.locked_until), 'MMM d')}
                       </>
                     ) : (
                       <>

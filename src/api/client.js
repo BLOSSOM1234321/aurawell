@@ -228,6 +228,77 @@ class APIClient {
       body: JSON.stringify(profileData),
     });
   }
+
+  // ============================================
+  // ROOM POSTS
+  // ============================================
+
+  async getRoomPosts(roomId) {
+    return this.request(`/room-posts/${roomId}`);
+  }
+
+  async createRoomPost(roomId, content) {
+    return this.request(`/room-posts/${roomId}`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+  }
+
+  async updateRoomPost(postId, content) {
+    return this.request(`/room-posts/post/${postId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ content }),
+    });
+  }
+
+  async deleteRoomPost(postId) {
+    return this.request(`/room-posts/post/${postId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async archiveRoomPost(postId) {
+    return this.request(`/room-posts/post/${postId}/archive`, {
+      method: 'POST',
+    });
+  }
+
+  async getArchivedPosts() {
+    return this.request('/room-posts/archived/all');
+  }
+
+  async togglePostLike(postId) {
+    return this.request(`/room-posts/post/${postId}/like`, {
+      method: 'POST',
+    });
+  }
+
+  async togglePostFavorite(postId) {
+    return this.request(`/room-posts/post/${postId}/favorite`, {
+      method: 'POST',
+    });
+  }
+
+  async getPostComments(postId) {
+    return this.request(`/room-posts/post/${postId}/comments`);
+  }
+
+  async addPostComment(postId, content) {
+    return this.request(`/room-posts/post/${postId}/comments`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+  }
+
+  async toggleCommentLike(commentId) {
+    return this.request(`/room-posts/comment/${commentId}/like`, {
+      method: 'POST',
+    });
+  }
+
+  async getStageLockStatus(groupId) {
+    return this.request(`/support-rooms/lock-status/${groupId}`);
+  }
 }
 
 // Create singleton instance

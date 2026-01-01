@@ -11,6 +11,8 @@ import { SupportRoom, SupportRoomMessage, SupportRoomMember } from '@/api/entiti
 import { leaveRoom } from '@/api/supportRooms';
 import BackHeader from '@/components/navigation/BackHeader';
 import { format } from 'date-fns';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import RoomPostsFeed from '@/components/community/RoomPostsFeed';
 
 export default function SupportRoomChat() {
   const { roomId } = useParams();
@@ -233,84 +235,98 @@ export default function SupportRoomChat() {
         </div>
       </div>
 
-      {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto bg-white">
-        <div className="max-w-4xl mx-auto p-4 space-y-4">
-          {messages.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              <Users className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-              <p className="text-lg font-medium mb-1">Welcome to your support room!</p>
-              <p className="text-sm">Be the first to share and start the conversation.</p>
-            </div>
-          ) : (
-            messages.map((message) => {
-              const isOwnMessage = message.userId === user?.id;
+      {/* Tabs for Chat and Posts */}
+      <Tabs defaultValue="chat" className="flex-1 flex flex-col">
+        <TabsList className="grid w-full grid-cols-2 max-w-4xl mx-auto">
+          <TabsTrigger value="chat">Chat</TabsTrigger>
+          <TabsTrigger value="posts">Posts</TabsTrigger>
+        </TabsList>
 
-              return (
-                <div
-                  key={message.id}
-                  className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div className={`max-w-[70%] ${isOwnMessage ? 'items-end' : 'items-start'} flex flex-col`}>
-                    {!isOwnMessage && (
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-indigo-500 flex items-center justify-center text-white text-sm font-semibold">
-                          {message.user?.name?.charAt(0).toUpperCase() || '?'}
-                        </div>
-                        <span className="text-sm font-medium text-gray-700">
-                          {message.user?.name || 'Anonymous'}
-                        </span>
-                      </div>
-                    )}
-
-                    <div
-                      className={`rounded-2xl px-4 py-2 ${
-                        isOwnMessage
-                          ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white'
-                          : 'bg-gray-100 text-gray-900'
-                      }`}
-                    >
-                      <p className="whitespace-pre-wrap break-words">{message.text}</p>
-                      <p className={`text-xs mt-1 ${isOwnMessage ? 'text-purple-200' : 'text-gray-500'}`}>
-                        {format(new Date(message.createdAt), 'h:mm a')}
-                      </p>
-                    </div>
-                  </div>
+        <TabsContent value="chat" className="flex-1 flex flex-col mt-0">
+          {/* Messages Container */}
+          <div className="flex-1 overflow-y-auto bg-white">
+            <div className="max-w-4xl mx-auto p-4 space-y-4">
+              {messages.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <Users className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                  <p className="text-lg font-medium mb-1">Welcome to your support room!</p>
+                  <p className="text-sm">Be the first to share and start the conversation.</p>
                 </div>
-              );
-            })
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-      </div>
+              ) : (
+                messages.map((message) => {
+                  const isOwnMessage = message.userId === user?.id;
 
-      {/* Message Input */}
-      <div className="bg-white border-t border-gray-200 p-4 shadow-lg">
-        <form onSubmit={handleSendMessage} className="max-w-4xl mx-auto flex gap-2">
-          <Input
-            value={messageText}
-            onChange={(e) => setMessageText(e.target.value)}
-            placeholder="Type your message... (Be kind and supportive)"
-            disabled={sending}
-            maxLength={1000}
-            className="flex-1"
-          />
-          <Button
-            type="submit"
-            disabled={!messageText.trim() || sending}
-            className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
-          >
-            {sending ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <Send className="w-5 h-5" />
-            )}
-          </Button>
-        </form>
-        <p className="text-xs text-gray-500 mt-2 text-center">
-          {messageText.length}/1000 characters
-        </p>
-      </div>
+                  return (
+                    <div
+                      key={message.id}
+                      className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div className={`max-w-[70%] ${isOwnMessage ? 'items-end' : 'items-start'} flex flex-col`}>
+                        {!isOwnMessage && (
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-indigo-500 flex items-center justify-center text-white text-sm font-semibold">
+                              {message.user?.name?.charAt(0).toUpperCase() || '?'}
+                            </div>
+                            <span className="text-sm font-medium text-gray-700">
+                              {message.user?.name || 'Anonymous'}
+                            </span>
+                          </div>
+                        )}
+
+                        <div
+                          className={`rounded-2xl px-4 py-2 ${
+                            isOwnMessage
+                              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white'
+                              : 'bg-gray-100 text-gray-900'
+                          }`}
+                        >
+                          <p className="whitespace-pre-wrap break-words">{message.text}</p>
+                          <p className={`text-xs mt-1 ${isOwnMessage ? 'text-purple-200' : 'text-gray-500'}`}>
+                            {format(new Date(message.createdAt), 'h:mm a')}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+          </div>
+
+          {/* Message Input */}
+          <div className="bg-white border-t border-gray-200 p-4 shadow-lg">
+            <form onSubmit={handleSendMessage} className="max-w-4xl mx-auto flex gap-2">
+              <Input
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                placeholder="Type your message... (Be kind and supportive)"
+                disabled={sending}
+                maxLength={1000}
+                className="flex-1"
+              />
+              <Button
+                type="submit"
+                disabled={!messageText.trim() || sending}
+                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+              >
+                {sending ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Send className="w-5 h-5" />
+                )}
+              </Button>
+            </form>
+            <p className="text-xs text-gray-500 mt-2 text-center">
+              {messageText.length}/1000 characters
+            </p>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="posts" className="flex-1 overflow-y-auto bg-white mt-0">
+          <RoomPostsFeed roomId={roomId} user={user} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

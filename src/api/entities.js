@@ -177,6 +177,126 @@ export const SupportRoomMessage = {
 export const Message = SupportRoomMessage;
 
 // ============================================
+// ROOM POST ENTITY
+// ============================================
+export const RoomPost = {
+  async findMany(options = {}) {
+    if (!options.where || !options.where.roomId) {
+      console.error('RoomPost.findMany requires roomId');
+      return [];
+    }
+
+    try {
+      const response = await api.getRoomPosts(options.where.roomId);
+      return response.data || [];
+    } catch (error) {
+      console.error('RoomPost.findMany error:', error);
+      return [];
+    }
+  },
+
+  async create(data) {
+    try {
+      const response = await api.createRoomPost(data.roomId, data.content);
+      return response.data || null;
+    } catch (error) {
+      console.error('RoomPost.create error:', error);
+      throw error;
+    }
+  },
+
+  async update(id, data) {
+    try {
+      const response = await api.updateRoomPost(id, data.content);
+      return response.data || null;
+    } catch (error) {
+      console.error('RoomPost.update error:', error);
+      throw error;
+    }
+  },
+
+  async delete(id) {
+    try {
+      await api.deleteRoomPost(id);
+      return { success: true };
+    } catch (error) {
+      console.error('RoomPost.delete error:', error);
+      throw error;
+    }
+  },
+
+  async archive(id) {
+    try {
+      const response = await api.archiveRoomPost(id);
+      return response.data || null;
+    } catch (error) {
+      console.error('RoomPost.archive error:', error);
+      throw error;
+    }
+  },
+
+  async toggleLike(id) {
+    try {
+      await api.togglePostLike(id);
+      return { success: true };
+    } catch (error) {
+      console.error('RoomPost.toggleLike error:', error);
+      throw error;
+    }
+  },
+
+  async toggleFavorite(id) {
+    try {
+      const response = await api.togglePostFavorite(id);
+      return response;
+    } catch (error) {
+      console.error('RoomPost.toggleFavorite error:', error);
+      throw error;
+    }
+  },
+};
+
+// ============================================
+// POST COMMENT ENTITY
+// ============================================
+export const PostComment = {
+  async findMany(options = {}) {
+    if (!options.where || !options.where.postId) {
+      console.error('PostComment.findMany requires postId');
+      return [];
+    }
+
+    try {
+      const response = await api.getPostComments(options.where.postId);
+      return response.data || [];
+    } catch (error) {
+      console.error('PostComment.findMany error:', error);
+      return [];
+    }
+  },
+
+  async create(data) {
+    try {
+      const response = await api.addPostComment(data.postId, data.content);
+      return response.data || null;
+    } catch (error) {
+      console.error('PostComment.create error:', error);
+      throw error;
+    }
+  },
+
+  async toggleLike(id) {
+    try {
+      await api.toggleCommentLike(id);
+      return { success: true };
+    } catch (error) {
+      console.error('PostComment.toggleLike error:', error);
+      throw error;
+    }
+  },
+};
+
+// ============================================
 // MOOD ENTRY ENTITY
 // ============================================
 export const MoodEntry = {

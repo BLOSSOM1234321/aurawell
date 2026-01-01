@@ -17,6 +17,7 @@ import moodRoutes from './routes/moods.js';
 import journalRoutes from './routes/journals.js';
 import meditationRoutes from './routes/meditations.js';
 import reelRoutes from './routes/reels.js';
+import roomPostsRoutes from './routes/roomPosts.js';
 
 // Load environment variables
 dotenv.config();
@@ -78,6 +79,7 @@ app.use('/api/moods', moodRoutes);
 app.use('/api/journals', journalRoutes);
 app.use('/api/meditations', meditationRoutes);
 app.use('/api/reels', reelRoutes);
+app.use('/api/room-posts', roomPostsRoutes);
 
 // ============================================
 // ERROR HANDLING

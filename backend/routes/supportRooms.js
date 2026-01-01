@@ -52,6 +52,30 @@ router.post('/join', protect, async (req, res) => {
       });
     }
 
+    // Check 30-day lock before joining
+    const lockCheck = await pool.query(
+      `SELECT * FROM stage_selections
+       WHERE user_id = $1
+         AND support_group_id = $2
+         AND is_active = true
+         AND locked_until > CURRENT_TIMESTAMP`,
+      [userId, supportGroupId]
+    );
+
+    if (lockCheck.rows.length > 0) {
+      const currentStage = lockCheck.rows[0].stage;
+      const lockedUntil = lockCheck.rows[0].locked_until;
+
+      if (currentStage !== stage) {
+        return res.status(403).json({
+          success: false,
+          error: `You are locked to the ${currentStage} stage until ${new Date(lockedUntil).toLocaleDateString()}`,
+          lockedStage: currentStage,
+          lockedUntil: lockedUntil
+        });
+      }
+    }
+
     // Try to join with retries
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
       try {
@@ -109,6 +133,22 @@ router.post('/join', protect, async (req, res) => {
              WHERE id = $1
              RETURNING *`,
             [targetRoom.id]
+          );
+
+          // Record stage selection with 30-day lock
+          // First, deactivate any existing active selection for this group
+          await client.query(
+            `UPDATE stage_selections
+             SET is_active = false
+             WHERE user_id = $1 AND support_group_id = $2 AND is_active = true`,
+            [userId, supportGroupId]
+          );
+
+          // Then create new active selection
+          await client.query(
+            `INSERT INTO stage_selections (user_id, support_group_id, stage, selected_at, is_active)
+             VALUES ($1, $2, $3, CURRENT_TIMESTAMP, true)`,
+            [userId, supportGroupId, stage]
           );
 
           return updatedRoom.rows[0];
@@ -236,6 +276,50 @@ router.get('/:roomId/members', protect, async (req, res) => {
 
   } catch (error) {
     console.error('Get room members error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error'
+    });
+  }
+});
+
+// ============================================
+// @route   GET /api/support-rooms/lock-status/:groupId
+// @desc    Check user's stage lock status for a group
+// @access  Private
+// ============================================
+router.get('/lock-status/:groupId', protect, async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const userId = req.user.id;
+
+    const result = await pool.query(
+      `SELECT stage, selected_at, locked_until,
+              CASE WHEN locked_until > CURRENT_TIMESTAMP THEN true ELSE false END as is_locked,
+              EXTRACT(DAY FROM (locked_until - CURRENT_TIMESTAMP)) as days_remaining
+       FROM stage_selections
+       WHERE user_id = $1
+         AND support_group_id = $2
+         AND is_active = true`,
+      [userId, groupId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.json({
+        success: true,
+        isLocked: false,
+        data: null
+      });
+    }
+
+    res.json({
+      success: true,
+      isLocked: result.rows[0].is_locked,
+      data: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error('Get lock status error:', error);
     res.status(500).json({
       success: false,
       error: 'Server error'

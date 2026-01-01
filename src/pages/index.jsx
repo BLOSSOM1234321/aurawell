@@ -72,6 +72,8 @@ import AdminTools from "./AdminTools";
 
 import InitializeSupportGroups from "./InitializeSupportGroups";
 
+import ArchivedPosts from "./ArchivedPosts";
+
 import { BrowserRouter as Router, Route, Routes, useLocation, Navigate } from 'react-router-dom';
 
 const PAGES = {
@@ -139,6 +141,8 @@ const PAGES = {
     ModeratorDashboard: ModeratorDashboard,
 
     InitializeSupportGroups: InitializeSupportGroups,
+
+    ArchivedPosts: ArchivedPosts,
 
 }
 
@@ -224,6 +228,7 @@ function PagesContent() {
                 <Route path="/InitializeSupportGroups" element={<ProtectedRoute><InitializeSupportGroups /></ProtectedRoute>} />
                 <Route path="/support-group/:groupId" element={<ProtectedRoute><SupportGroupStageSelection /></ProtectedRoute>} />
                 <Route path="/support-room/:roomId" element={<ProtectedRoute><SupportRoomChat /></ProtectedRoute>} />
+                <Route path="/ArchivedPosts" element={<ProtectedRoute><ArchivedPosts /></ProtectedRoute>} />
             </Routes>
         </Layout>
     );
