@@ -195,6 +195,7 @@ function PagesContent() {
                 <Route path="/Resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
                 <Route path="/Community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
                 <Route path="/Group" element={<ProtectedRoute><Group /></ProtectedRoute>} />
+                <Route path="/Group/:id" element={<ProtectedRoute><Group /></ProtectedRoute>} />
                 <Route path="/Settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 <Route path="/GoPremium" element={<ProtectedRoute><GoPremium /></ProtectedRoute>} />
                 <Route path="/UnspokenConnections" element={<ProtectedRoute><UnspokenConnections /></ProtectedRoute>} />

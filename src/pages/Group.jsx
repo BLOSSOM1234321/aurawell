@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from "react";
-import { useLocation, Link } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,14 +15,15 @@ import {
   Trophy,
   Video,
   Pin,
-  HeartPulse, Sparkles, Sun, Moon, Feather, Baby, GraduationCap, Scale, ShieldHalf, Brain, BookOpen
+  HeartPulse, Sparkles, Sun, Moon, Feather, Baby, GraduationCap, Scale, ShieldHalf, Brain, BookOpen,
+  Loader2
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
 import BackHeader from "../components/navigation/BackHeader";
 import LevelSelectionModal from "../components/community/LevelSelectionModal";
-import { mockSupportGroups } from "../data/mockGroups";
 import UpcomingLiveCard from "../components/live/UpcomingLiveCard";
+import api from "@/api/client";
 
 // Map icon names to Lucide React components
 const iconMap = {
@@ -35,9 +36,7 @@ const iconMap = {
 };
 
 export default function GroupPage() {
-  const location = useLocation();
-  const queryParams = new URLSearchParams(location.search);
-  const groupSlug = queryParams.get('name') || queryParams.get('slug');
+  const { id } = useParams();
 
   const [group, setGroup] = useState(null);
   const [activeTab, setActiveTab] = useState('discussions');
@@ -47,19 +46,15 @@ export default function GroupPage() {
   const [userLevel, setUserLevel] = useState(null);
   const [upcomingLiveSessions, setUpcomingLiveSessions] = useState([]);
 
-  const loadUserAndGroup = useCallback((slug) => {
+  const loadGroup = useCallback(async (groupId) => {
     setIsLoading(true);
     setError(null);
 
-    // Simulate async loading
-    setTimeout(() => {
-      // Find group from mock data
-      const foundGroup = mockSupportGroups.find(g => g.slug === slug);
+    try {
+      const response = await api.getSupportGroup(groupId);
 
-      if (foundGroup) {
-        // Get the correct icon component
-        const IconComponent = iconMap[foundGroup.icon] || iconMap.default;
-        setGroup({ ...foundGroup, icon: IconComponent });
+      if (response.success && response.data) {
+        setGroup(response.data);
       } else {
         setError('Group not found.');
       }
@@ -79,18 +74,22 @@ export default function GroupPage() {
         .slice(0, 2); // Show up to 2 upcoming sessions
 
       setUpcomingLiveSessions(upcoming);
+    } catch (err) {
+      console.error('Error loading group:', err);
+      setError('Failed to load group. Please try again.');
+    } finally {
       setIsLoading(false);
-    }, 300);
+    }
   }, []);
 
   useEffect(() => {
-    if (groupSlug) {
-      loadUserAndGroup(groupSlug);
+    if (id) {
+      loadGroup(id);
     } else {
       setError("No group specified in the URL.");
       setIsLoading(false);
     }
-  }, [groupSlug, loadUserAndGroup]);
+  }, [id, loadGroup]);
 
   // Check for user level selection
   useEffect(() => {
@@ -118,8 +117,8 @@ export default function GroupPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-slate-50 via-cyan-50 to-teal-50">
-        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-cyan-600"></div>
+      <div className="min-h-screen flex justify-center items-center">
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#5C4B99' }} />
       </div>
     );
   }
@@ -152,10 +151,13 @@ export default function GroupPage() {
 
   // No user check needed for now in mock mode
 
-  const { title, description, icon: Icon, color, textColor, slug } = group;
+  const title = group.name;
+  const description = group.description;
+  const groupIcon = group.icon; // This is the emoji from the database
+  const groupColor = group.color || '#5C4B99';
 
-  const groupBgGradient = color || 'from-cyan-500 to-teal-500';
-  const groupIconBg = color || 'from-cyan-500 to-teal-500';
+  const groupBgGradient = 'from-purple-500 to-indigo-500';
+  const groupIconBg = 'from-purple-500 to-indigo-500';
 
   // Define stage information for display purposes
   const stageInfo = {
@@ -190,8 +192,8 @@ export default function GroupPage() {
         {/* Current Level Display */}
         {userLevel && (
           <div className="flex items-center gap-4">
-            <div className={`p-4 rounded-2xl shadow-lg bg-gradient-to-br ${stageInfo[userLevel]?.color || groupIconBg}`}>
-              {Icon && <Icon className="w-8 h-8 text-white" />}
+            <div className={`p-4 rounded-2xl shadow-lg bg-gradient-to-br ${stageInfo[userLevel]?.color || groupIconBg} flex items-center justify-center text-4xl`}>
+              {groupIcon}
             </div>
             <div className="flex flex-col gap-1">
               <Badge className="bg-white/20 text-white border-white/30 self-start">
