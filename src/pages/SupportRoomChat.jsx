@@ -4,11 +4,10 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  Users, Send, LogOut, Loader2, AlertTriangle, Shield, MoreVertical
+  Users, Send, Loader2, AlertTriangle, Shield, MoreVertical
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { SupportRoom, SupportRoomMessage, SupportRoomMember } from '@/api/entities';
-import { leaveRoom } from '@/api/supportRooms';
 import BackHeader from '@/components/navigation/BackHeader';
 import { format } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -147,26 +146,6 @@ export default function SupportRoomChat() {
     }
   };
 
-  const handleLeaveRoom = async () => {
-    if (!confirm('Are you sure you want to leave this support room?')) {
-      return;
-    }
-
-    try {
-      const result = await leaveRoom(roomId, user.id);
-
-      if (result.success) {
-        toast.success('Left support room');
-        navigate('/community');
-      } else {
-        toast.error(result.error || 'Failed to leave room');
-      }
-    } catch (error) {
-      console.error('Failed to leave room:', error);
-      toast.error('An error occurred');
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -215,14 +194,6 @@ export default function SupportRoomChat() {
               </p>
             </div>
 
-            <Button
-              onClick={handleLeaveRoom}
-              variant="ghost"
-              className="text-white hover:bg-white/20"
-            >
-              <LogOut className="w-5 h-5 mr-2" />
-              Leave
-            </Button>
           </div>
         </div>
       </div>
