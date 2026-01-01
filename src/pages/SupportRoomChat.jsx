@@ -30,10 +30,10 @@ export default function SupportRoomChat() {
   useEffect(() => {
     loadData();
 
-    // Poll for new messages every 3 seconds
+    // Poll for new messages every 10 seconds
     pollIntervalRef.current = setInterval(() => {
       loadMessages();
-    }, 3000);
+    }, 10000);
 
     return () => {
       if (pollIntervalRef.current) {
