@@ -13,7 +13,9 @@ router.get('/:roomId', protect, async (req, res) => {
     const { limit = 50, offset = 0 } = req.query;
 
     const result = await pool.query(
-      `SELECT m.*, u.username, u.avatar_url
+      `SELECT m.id, m.room_id as "roomId", m.user_id as "userId",
+              m.content as text, m.created_at as "createdAt", m.updated_at as "updatedAt",
+              u.username, u.avatar_url, u.name
        FROM messages m
        JOIN users u ON m.user_id = u.id
        WHERE m.room_id = $1 AND m.is_deleted = false
@@ -43,11 +45,22 @@ router.post('/', protect, async (req, res) => {
     const result = await pool.query(
       `INSERT INTO messages (room_id, user_id, content)
        VALUES ($1, $2, $3)
-       RETURNING id, room_id, user_id, content, created_at`,
+       RETURNING id, room_id as "roomId", user_id as "userId",
+                 content as text, created_at as "createdAt"`,
       [roomId, req.user.id, content.trim()]
     );
 
-    res.status(201).json({ success: true, data: result.rows[0] });
+    // Add user info to response
+    const message = {
+      ...result.rows[0],
+      user: {
+        id: req.user.id,
+        name: req.user.name,
+        username: req.user.username
+      }
+    };
+
+    res.status(201).json({ success: true, data: message });
   } catch (error) {
     console.error('Send message error:', error);
     res.status(500).json({ success: false, error: 'Server error' });
