@@ -34,7 +34,7 @@ app.use(helmet());
 
 // CORS configuration
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173', 'capacitor://localhost', 'http://localhost'],
+  origin: process.env.CORS_ORIGIN === '*' ? '*' : (process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173', 'capacitor://localhost', 'http://localhost']),
   credentials: true
 };
 app.use(cors(corsOptions));
