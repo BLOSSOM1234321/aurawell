@@ -4,45 +4,11 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { User } from "@/api/entities";
-import { Home, Sprout, Globe, User as UserIcon, Bird, Play } from "lucide-react"; // Added Play icon
+import { Home, Sprout, Globe, User as UserIcon, Bird, Play, Shield } from "lucide-react"; // Added Play and Shield icons
 import { Toaster } from 'sonner';
 import { AnimatePresence, motion } from 'framer-motion';
 import OpeningAnimation from '../components/core/OpeningAnimation';
 import { createPageUrl } from '@/utils';
-
-// Bottom navigation items
-const navigationItems = [
-  {
-    title: "Home",
-    icon: Bird,
-    activeIcon: Bird,
-    route: "Dashboard"
-  },
-  {
-    title: "Growth",
-    icon: Sprout,
-    activeIcon: Sprout,
-    route: "Growth"
-  },
-  {
-    title: "Reels", // New Reels item
-    icon: Play,
-    activeIcon: Play,
-    route: "Reels"
-  },
-  {
-    title: "Community",
-    icon: Globe,
-    activeIcon: Globe,
-    route: "Community"
-  },
-  {
-    title: "Profile",
-    icon: UserIcon,
-    activeIcon: UserIcon,
-    route: "Profile"
-  }
-];
 
 const themes = {
   sunset: `
@@ -120,41 +86,93 @@ export default function Layout({ children, currentPageName }) {
   // Determine current active route
   const getCurrentRoute = () => {
     const path = location.pathname.toLowerCase();
-    
+
     // Exact match for the main sections first
     if (path === '/growth') return 'Growth';
     if (path === '/community') return 'Community';
     if (path === '/profile') return 'Profile';
     if (path === '/dashboard' || path === '/') return 'Dashboard';
     if (path === '/reels') return 'Reels'; // Handle Reels route
+    if (path === '/moderatordashboard') return 'ModeratorDashboard'; // Handle Moderator route
 
     // Check for sub-pages
     const growthPages = ['/moodtracker', '/mindgarden', '/meditations', '/journal'];
     if (growthPages.some(p => path.startsWith(p))) {
       return 'Growth';
     }
-    
+
     // Reels sub-pages (if any, add here)
     const reelsPages = []; // e.g., ['/reels/create', '/reels/view']
     if (reelsPages.some(p => path.startsWith(p))) {
       return 'Reels';
     }
 
-    const communityPages = ['/unspokenconnections', '/group', '/groups', '/mindfulworldmap'];
+    const communityPages = ['/unspokenconnections', '/group', '/groups', '/mindfulworldmap', '/support-group', '/support-room'];
      if (communityPages.some(p => path.startsWith(p))) {
       return 'Community';
     }
-    
+
     const profilePages = ['/settings', '/gopremium'];
     if (profilePages.some(p => path.startsWith(p))) {
       return 'Profile';
     }
-    
+
     return 'Dashboard'; // Default to Home
   };
 
   const currentRoute = getCurrentRoute();
-  
+
+  // Check if user is a moderator
+  const isModerator = user?.email === 'blossomalabor132@gmail.com';
+
+  // Bottom navigation items - dynamically include moderator if user is a moderator
+  const navigationItems = useMemo(() => {
+    const baseItems = [
+      {
+        title: "Home",
+        icon: Bird,
+        activeIcon: Bird,
+        route: "Dashboard"
+      },
+      {
+        title: "Growth",
+        icon: Sprout,
+        activeIcon: Sprout,
+        route: "Growth"
+      },
+      {
+        title: "Reels",
+        icon: Play,
+        activeIcon: Play,
+        route: "Reels"
+      },
+      {
+        title: "Community",
+        icon: Globe,
+        activeIcon: Globe,
+        route: "Community"
+      },
+      {
+        title: "Profile",
+        icon: UserIcon,
+        activeIcon: UserIcon,
+        route: "Profile"
+      }
+    ];
+
+    // Add moderator item if user is a moderator
+    if (isModerator) {
+      baseItems.splice(4, 0, {
+        title: "Moderator",
+        icon: Shield,
+        activeIcon: Shield,
+        route: "ModeratorDashboard"
+      });
+    }
+
+    return baseItems;
+  }, [isModerator]);
+
   const isSpecialBackgroundPage = useMemo(() => {
     const path = location.pathname.toLowerCase();
     const dreamJournalActive = path.startsWith('/journal') && location.search.includes('tab=dream');
