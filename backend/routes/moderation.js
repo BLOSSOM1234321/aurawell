@@ -6,9 +6,8 @@ const router = express.Router();
 
 // Middleware to check if user is Blossom Alabor (moderator)
 const isModerator = (req, res, next) => {
-  // TODO: Replace with actual Blossom Alabor's user ID from database
-  // For now, check if user email matches
-  if (req.user.email !== 'blossomalabar@gmail.com') {
+  // Check if user email matches moderator email
+  if (req.user.email !== 'blossomalabor132@gmail.com') {
     return res.status(403).json({
       success: false,
       error: 'Access denied. Moderators only.'
