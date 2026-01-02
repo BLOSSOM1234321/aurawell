@@ -451,8 +451,9 @@ export default function MeditationPlayer({ meditation, onComplete, onBack, isLoa
     </Card>
   ) : (
     <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
-      <CardHeader>
-        <div className="flex items-center justify-between w-full">
+      <CardHeader className="space-y-4">
+        {/* Back Button Row */}
+        <div className="flex items-center justify-start">
           <Button
             variant="ghost"
             onClick={onBack}
@@ -460,67 +461,69 @@ export default function MeditationPlayer({ meditation, onComplete, onBack, isLoa
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-
-          <div className="flex items-center gap-4">
-            {/* AI Voice Speed Control - Only show if voice is available */}
-            {voiceOverUrl && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Speed:</span>
-                <div className="flex gap-1">
-                  {[0.8, 0.9, 1.0, 1.1].map((speed) => (
-                    <button
-                      key={speed}
-                      onClick={() => handleSpeedChange(speed)}
-                      className={`px-2 py-1 text-xs rounded-lg transition-colors ${
-                        voiceSpeed === speed
-                          ? 'bg-purple-500 text-white'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
-                    >
-                      {speed}x
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Background Music Controls */}
-            {backgroundMusicUrl && (
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="ghost"
-                  onClick={toggleAudio}
-                  className="p-2 rounded-2xl hover:bg-gray-100"
-                  title={audioEnabled ? "Disable background music" : "Enable background music"}
-                >
-                  {audioEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-                </Button>
-
-                {audioEnabled && (
-                  <div className="flex items-center gap-2 min-w-[120px]">
-                    <span className="text-sm text-gray-600">Volume:</span>
-                    <Slider
-                      value={[audioVolume]}
-                      onValueChange={(values) => setAudioVolume(values[0])}
-                      max={100}
-                      min={0}
-                      step={5}
-                      className="w-16"
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
         </div>
 
-        <div className="text-center space-y-2 pt-4">
+        {/* Title and Description */}
+        <div className="text-center space-y-2">
           <CardTitle className="text-2xl">{meditation.title}</CardTitle>
           <p className="text-gray-600">{meditation.description}</p>
           {voiceOverUrl && (
-              <p className="text-sm text-purple-600 font-medium flex items-center justify-center gap-2">
-                  <Headphones className="w-4 h-4" /> AI Voice Guidance Enabled
-              </p>
+            <p className="text-sm text-purple-600 font-medium flex items-center justify-center gap-2">
+              <Headphones className="w-4 h-4" /> AI Voice Guidance Enabled
+            </p>
+          )}
+        </div>
+
+        {/* Controls Row - Stacked on mobile */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+          {/* AI Voice Speed Control */}
+          {voiceOverUrl && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Speed:</span>
+              <div className="flex gap-1">
+                {[0.8, 0.9, 1.0, 1.1].map((speed) => (
+                  <button
+                    key={speed}
+                    onClick={() => handleSpeedChange(speed)}
+                    className={`px-3 py-1 text-xs rounded-lg transition-colors ${
+                      voiceSpeed === speed
+                        ? 'bg-purple-500 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {speed}x
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Background Music Controls */}
+          {backgroundMusicUrl && (
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                onClick={toggleAudio}
+                className="p-2 rounded-2xl hover:bg-gray-100"
+                title={audioEnabled ? "Disable background music" : "Enable background music"}
+              >
+                {audioEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+              </Button>
+
+              {audioEnabled && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600 whitespace-nowrap">Volume:</span>
+                  <Slider
+                    value={[audioVolume]}
+                    onValueChange={(values) => setAudioVolume(values[0])}
+                    max={100}
+                    min={0}
+                    step={5}
+                    className="w-20"
+                  />
+                </div>
+              )}
+            </div>
           )}
         </div>
       </CardHeader>
