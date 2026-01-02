@@ -269,24 +269,33 @@ export default function ModeratorDashboard() {
 
         {/* Main Tabs */}
         <Tabs defaultValue="alerts" className="mt-8">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="alerts">
-              <Bell className="w-4 h-4 mr-2" />
-              Safety Alerts ({stats.activeAlerts})
-            </TabsTrigger>
-            <TabsTrigger value="crisis">
-              <AlertCircle className="w-4 h-4 mr-2" />
-              Crisis Logs
-            </TabsTrigger>
-            <TabsTrigger value="flagged">
-              <Eye className="w-4 h-4 mr-2" />
-              Flagged Content ({stats.flaggedItems})
-            </TabsTrigger>
-            <TabsTrigger value="rooms">
-              <Users className="w-4 h-4 mr-2" />
-              Support Rooms ({stats.totalRooms})
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto">
+            <TabsList className="inline-flex w-auto min-w-full">
+              <TabsTrigger value="alerts" className="flex-shrink-0">
+                <Bell className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">Safety Alerts</span>
+                <span className="sm:hidden">Alerts</span>
+                <span className="ml-1">({stats.activeAlerts})</span>
+              </TabsTrigger>
+              <TabsTrigger value="crisis" className="flex-shrink-0">
+                <AlertCircle className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">Crisis Logs</span>
+                <span className="sm:hidden">Crisis</span>
+              </TabsTrigger>
+              <TabsTrigger value="flagged" className="flex-shrink-0">
+                <Eye className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">Flagged Content</span>
+                <span className="sm:hidden">Flagged</span>
+                <span className="ml-1">({stats.flaggedItems})</span>
+              </TabsTrigger>
+              <TabsTrigger value="rooms" className="flex-shrink-0">
+                <Users className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">Support Rooms</span>
+                <span className="sm:hidden">Rooms</span>
+                <span className="ml-1">({stats.totalRooms})</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Safety Alerts Tab */}
           <TabsContent value="alerts" className="mt-6">
