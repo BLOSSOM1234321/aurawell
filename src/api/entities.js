@@ -92,6 +92,23 @@ export const SupportRoom = {
   },
 
   async findById(id) {
+    // Check if user is a moderator
+    const userData = localStorage.getItem('aurawell_current_user');
+    const isModerator = userData && JSON.parse(userData).email === 'blossomalabor132@gmail.com';
+
+    if (isModerator) {
+      // Moderators can view ALL rooms
+      try {
+        const response = await api.getModerationSupportRooms();
+        if (response.success) {
+          return response.data.find(r => r.id === id) || null;
+        }
+      } catch (error) {
+        console.error('SupportRoom.findById (moderator) error:', error);
+      }
+    }
+
+    // Regular users - only show their rooms
     const rooms = await this.findMany();
     return rooms.find(r => r.id === id) || null;
   },
