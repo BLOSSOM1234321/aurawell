@@ -6,6 +6,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Send, Loader2, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import PostCard from './PostCard';
+import { analyzeTextForRisk, BehavioralSignalTracker, logCrisisEvent } from '@/utils/crisisDetection';
+import SafetyModal from '@/components/safety/SafetyModal';
+import MediumRiskBanner from '@/components/safety/MediumRiskBanner';
+import LowRiskExerciseSuggestion from '@/components/safety/LowRiskExerciseSuggestion';
 
 export default function RoomPostsFeed({ roomId, user }) {
   const [posts, setPosts] = useState([]);
@@ -13,9 +17,22 @@ export default function RoomPostsFeed({ roomId, user }) {
   const [newPostContent, setNewPostContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Crisis detection state
+  const [tracker, setTracker] = useState(null);
+  const [showSafetyModal, setShowSafetyModal] = useState(false);
+  const [showMediumBanner, setShowMediumBanner] = useState(false);
+  const [showLowSuggestion, setShowLowSuggestion] = useState(false);
+
   useEffect(() => {
     loadPosts();
   }, [roomId]);
+
+  // Initialize crisis detection tracker
+  useEffect(() => {
+    if (user) {
+      setTracker(new BehavioralSignalTracker(user.id));
+    }
+  }, [user]);
 
   const loadPosts = async () => {
     setLoading(true);
@@ -36,6 +53,46 @@ export default function RoomPostsFeed({ roomId, user }) {
     if (!newPostContent.trim()) {
       toast.error('Please write something');
       return;
+    }
+
+    // CRISIS DETECTION
+    const riskAnalysis = analyzeTextForRisk(newPostContent);
+
+    if (tracker) {
+      tracker.addMessage(newPostContent, riskAnalysis.level);
+      const behavioralRisk = tracker.getBehavioralRisk();
+
+      if (behavioralRisk.recommendation === 'ESCALATE' && riskAnalysis.level !== 'HIGH') {
+        riskAnalysis.level = 'MEDIUM';
+      }
+    }
+
+    // Log crisis event
+    if (riskAnalysis.level !== 'NONE') {
+      logCrisisEvent({
+        userId: user.id,
+        context: 'support_room_post',
+        roomId: roomId,
+        riskLevel: riskAnalysis.level,
+        text: newPostContent.substring(0, 100),
+        matches: riskAnalysis.matches
+      });
+    }
+
+    // HIGH RISK - Block post, show safety modal
+    if (riskAnalysis.level === 'HIGH') {
+      setShowSafetyModal(true);
+      return;
+    }
+
+    // MEDIUM RISK - Allow post but show banner
+    if (riskAnalysis.level === 'MEDIUM') {
+      setShowMediumBanner(true);
+    }
+
+    // LOW RISK - Allow post, show suggestion
+    if (riskAnalysis.level === 'LOW') {
+      setShowLowSuggestion(true);
     }
 
     if (newPostContent.trim().length > 2000) {
@@ -119,8 +176,34 @@ export default function RoomPostsFeed({ roomId, user }) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-4 space-y-6">
-      {/* Create New Post */}
+    <>
+      {/* Safety Interventions */}
+      {showSafetyModal && (
+        <SafetyModal
+          onClose={() => {
+            setShowSafetyModal(false);
+            setNewPostContent(''); // Clear the high-risk post
+          }}
+          userRegion="US"
+          context="support_room"
+          mandatory={true}
+        />
+      )}
+
+      {showMediumBanner && (
+        <MediumRiskBanner
+          onDismiss={() => setShowMediumBanner(false)}
+        />
+      )}
+
+      {showLowSuggestion && (
+        <LowRiskExerciseSuggestion
+          onDismiss={() => setShowLowSuggestion(false)}
+        />
+      )}
+
+      <div className="max-w-4xl mx-auto p-4 space-y-6">
+        {/* Create New Post */}
       <Card className="bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200">
         <CardContent className="p-4">
           <div className="space-y-3">
@@ -182,5 +265,6 @@ export default function RoomPostsFeed({ roomId, user }) {
         ))
       )}
     </div>
+    </>
   );
 }

@@ -16,13 +16,13 @@ import {
   FlaggedContent, ContentViolationReport
 } from '@/api/entities';
 import {
-  getAllRooms,
   kickUserFromRoom,
   suspendUser,
   banUser,
   archiveRoom,
   getUserModerationHistory
 } from '@/api/moderation';
+import api from '@/api/client';
 import BackHeader from '@/components/navigation/BackHeader';
 
 const STAGE_INFO = {
@@ -107,19 +107,9 @@ export default function ModeratorDashboard() {
 
   const loadRooms = async () => {
     try {
-      let userId = user?.id;
-      if (!userId) {
-        const userData = localStorage.getItem('aurawell_current_user');
-        if (userData) {
-          userId = JSON.parse(userData).id;
-        }
-      }
-
-      if (!userId) return;
-
-      const result = await getAllRooms(userId);
+      const result = await api.getModerationSupportRooms();
       if (result.success) {
-        setRooms(result.rooms);
+        setRooms(result.data);
       }
     } catch (error) {
       console.error('Failed to load rooms:', error);

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { PostComment } from '@/api/entities';
+import { PostComment, ContentViolationReport } from '@/api/entities';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import {
-  Heart, MessageCircle, Archive, Star, Edit, Trash2, Send, X, MoreVertical
+  Heart, MessageCircle, Archive, Star, Edit, Trash2, Send, X, MoreVertical, Flag
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -15,6 +15,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { analyzeTextForRisk, BehavioralSignalTracker, logCrisisEvent } from '@/utils/crisisDetection';
+import SafetyModal from '@/components/safety/SafetyModal';
+import MediumRiskBanner from '@/components/safety/MediumRiskBanner';
+import LowRiskExerciseSuggestion from '@/components/safety/LowRiskExerciseSuggestion';
 
 export default function PostCard({ post, user, onLike, onFavorite, onArchive, onDelete, onEdit }) {
   const [showComments, setShowComments] = useState(false);
@@ -24,11 +28,30 @@ export default function PostCard({ post, user, onLike, onFavorite, onArchive, on
   const [editContent, setEditContent] = useState(post.content);
   const isOwnPost = post.user_id === user?.id;
 
+  // Crisis detection state
+  const [tracker, setTracker] = useState(null);
+  const [showSafetyModal, setShowSafetyModal] = useState(false);
+  const [showMediumBanner, setShowMediumBanner] = useState(false);
+  const [showLowSuggestion, setShowLowSuggestion] = useState(false);
+
+  // Content flagging state
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportingCommentId, setReportingCommentId] = useState(null);
+  const [commentReportReason, setCommentReportReason] = useState('');
+
   useEffect(() => {
     if (showComments) {
       loadComments();
     }
   }, [showComments]);
+
+  // Initialize crisis detection tracker
+  useEffect(() => {
+    if (user) {
+      setTracker(new BehavioralSignalTracker(user.id));
+    }
+  }, [user]);
 
   const loadComments = async () => {
     try {
@@ -43,6 +66,44 @@ export default function PostCard({ post, user, onLike, onFavorite, onArchive, on
 
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
+
+    // CRISIS DETECTION
+    const riskAnalysis = analyzeTextForRisk(newComment);
+
+    if (tracker) {
+      tracker.addMessage(newComment, riskAnalysis.level);
+      const behavioralRisk = tracker.getBehavioralRisk();
+
+      if (behavioralRisk.recommendation === 'ESCALATE' && riskAnalysis.level !== 'HIGH') {
+        riskAnalysis.level = 'MEDIUM';
+      }
+    }
+
+    if (riskAnalysis.level !== 'NONE') {
+      logCrisisEvent({
+        userId: user.id,
+        context: 'support_room_comment',
+        postId: post.id,
+        riskLevel: riskAnalysis.level,
+        text: newComment.substring(0, 100),
+        matches: riskAnalysis.matches
+      });
+    }
+
+    // HIGH RISK - Block comment
+    if (riskAnalysis.level === 'HIGH') {
+      setShowSafetyModal(true);
+      return;
+    }
+
+    // MEDIUM/LOW - Show appropriate intervention but allow comment
+    if (riskAnalysis.level === 'MEDIUM') {
+      setShowMediumBanner(true);
+    }
+
+    if (riskAnalysis.level === 'LOW') {
+      setShowLowSuggestion(true);
+    }
 
     if (newComment.trim().length > 500) {
       toast.error('Comment is too long (max 500 characters)');
@@ -92,9 +153,158 @@ export default function PostCard({ post, user, onLike, onFavorite, onArchive, on
     setIsEditing(false);
   };
 
+  const handleReportPost = async () => {
+    try {
+      await ContentViolationReport.create({
+        reporterId: user.id,
+        contentType: 'room_post',
+        contentId: post.id,
+        roomId: post.roomId,
+        reason: reportReason,
+        status: 'pending'
+      });
+
+      toast.success('Post reported. A moderator will review it.');
+      setShowReportModal(false);
+      setReportReason('');
+    } catch (error) {
+      console.error('Failed to report post:', error);
+      toast.error('Failed to report post');
+    }
+  };
+
+  const handleReportComment = async (commentId, reason) => {
+    try {
+      await ContentViolationReport.create({
+        reporterId: user.id,
+        contentType: 'post_comment',
+        contentId: commentId,
+        postId: post.id,
+        roomId: post.roomId,
+        reason: reason,
+        status: 'pending'
+      });
+
+      toast.success('Comment reported.');
+      setReportingCommentId(null);
+      setCommentReportReason('');
+    } catch (error) {
+      console.error('Failed to report comment:', error);
+      toast.error('Failed to report comment');
+    }
+  };
+
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
+    <>
+      {/* Safety Interventions */}
+      {showSafetyModal && (
+        <SafetyModal
+          onClose={() => {
+            setShowSafetyModal(false);
+            setNewComment(''); // Clear the high-risk comment
+          }}
+          userRegion="US"
+          context="support_room"
+          mandatory={true}
+        />
+      )}
+
+      {showMediumBanner && (
+        <MediumRiskBanner
+          onDismiss={() => setShowMediumBanner(false)}
+        />
+      )}
+
+      {showLowSuggestion && (
+        <LowRiskExerciseSuggestion
+          onDismiss={() => setShowLowSuggestion(false)}
+        />
+      )}
+
+      {/* Report Post Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-96 p-6">
+            <h3 className="font-semibold mb-4">Report Post</h3>
+            <select
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+              className="w-full border rounded p-2 mb-4"
+            >
+              <option value="">Select reason...</option>
+              <option value="harassment">Harassment</option>
+              <option value="spam">Spam</option>
+              <option value="self-harm">Self-harm concern</option>
+              <option value="hate-speech">Hate speech</option>
+              <option value="misinformation">Misinformation</option>
+              <option value="other">Other</option>
+            </select>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleReportPost}
+                disabled={!reportReason}
+                className="flex-1"
+              >
+                Submit Report
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowReportModal(false);
+                  setReportReason('');
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Report Comment Modal */}
+      {reportingCommentId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-96 p-6">
+            <h3 className="font-semibold mb-4">Report Comment</h3>
+            <select
+              value={commentReportReason}
+              onChange={(e) => setCommentReportReason(e.target.value)}
+              className="w-full border rounded p-2 mb-4"
+            >
+              <option value="">Select reason...</option>
+              <option value="harassment">Harassment</option>
+              <option value="spam">Spam</option>
+              <option value="self-harm">Self-harm concern</option>
+              <option value="hate-speech">Hate speech</option>
+              <option value="misinformation">Misinformation</option>
+              <option value="other">Other</option>
+            </select>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => handleReportComment(reportingCommentId, commentReportReason)}
+                disabled={!commentReportReason}
+                className="flex-1"
+              >
+                Submit Report
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setReportingCommentId(null);
+                  setCommentReportReason('');
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      <Card className="hover:shadow-md transition-shadow">
+        <CardContent className="p-4">
         {/* Post Header */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-2">
@@ -110,7 +320,7 @@ export default function PostCard({ post, user, onLike, onFavorite, onArchive, on
             </div>
           </div>
 
-          {isOwnPost && !isEditing && (
+          {!isEditing && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm">
@@ -118,18 +328,27 @@ export default function PostCard({ post, user, onLike, onFavorite, onArchive, on
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setIsEditing(true)}>
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onArchive(post.id)}>
-                  <Archive className="w-4 h-4 mr-2" />
-                  Archive
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onDelete(post.id)} className="text-red-600">
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete
-                </DropdownMenuItem>
+                {isOwnPost ? (
+                  <>
+                    <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onArchive(post.id)}>
+                      <Archive className="w-4 h-4 mr-2" />
+                      Archive
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onDelete(post.id)} className="text-red-600">
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <DropdownMenuItem onClick={() => setShowReportModal(true)}>
+                    <Flag className="w-4 h-4 mr-2" />
+                    Report Post
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           )}
@@ -224,39 +443,53 @@ export default function PostCard({ post, user, onLike, onFavorite, onArchive, on
             {/* Comments List */}
             {comments.length > 0 && (
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {comments.map((comment) => (
-                  <div key={comment.id} className="bg-gray-50 rounded-lg p-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-medium text-gray-900">
-                            {comment.username || 'Anonymous'}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            {format(new Date(comment.created_at), "MMM d 'at' h:mm a")}
-                          </span>
+                {comments.map((comment) => {
+                  const isOwnComment = comment.user_id === user?.id;
+
+                  return (
+                    <div key={comment.id} className="bg-gray-50 rounded-lg p-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-medium text-gray-900">
+                              {comment.username || 'Anonymous'}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {format(new Date(comment.created_at), "MMM d 'at' h:mm a")}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-700">{comment.content}</p>
+                          {!isOwnComment && (
+                            <button
+                              onClick={() => setReportingCommentId(comment.id)}
+                              className="text-gray-400 hover:text-red-500 text-xs mt-1 flex items-center gap-1"
+                            >
+                              <Flag className="w-3 h-3" />
+                              Report
+                            </button>
+                          )}
                         </div>
-                        <p className="text-sm text-gray-700">{comment.content}</p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleCommentLike(comment.id)}
+                          className={`flex items-center gap-1 ${
+                            comment.is_liked ? 'text-red-500' : 'text-gray-500'
+                          }`}
+                        >
+                          <Heart className={`w-3 h-3 ${comment.is_liked ? 'fill-current' : ''}`} />
+                          <span className="text-xs">{comment.likes_count || 0}</span>
+                        </Button>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleCommentLike(comment.id)}
-                        className={`flex items-center gap-1 ${
-                          comment.is_liked ? 'text-red-500' : 'text-gray-500'
-                        }`}
-                      >
-                        <Heart className={`w-3 h-3 ${comment.is_liked ? 'fill-current' : ''}`} />
-                        <span className="text-xs">{comment.likes_count || 0}</span>
-                      </Button>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
         )}
       </CardContent>
     </Card>
+    </>
   );
 }

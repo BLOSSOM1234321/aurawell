@@ -299,6 +299,64 @@ class APIClient {
   async getStageLockStatus(groupId) {
     return this.request(`/support-rooms/lock-status/${groupId}`);
   }
+
+  // ============================================
+  // MODERATION
+  // ============================================
+
+  async getFlaggedContent() {
+    return this.request('/moderation/flagged-content');
+  }
+
+  async deleteMessage(messageId, reason) {
+    return this.request(`/moderation/message/${messageId}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  async deletePost(postId, reason) {
+    return this.request(`/moderation/post/${postId}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  async deleteComment(commentId, reason) {
+    return this.request(`/moderation/comment/${commentId}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  async kickUser(userId, roomId, reason) {
+    return this.request('/moderation/kick-user', {
+      method: 'POST',
+      body: JSON.stringify({ userId, roomId, reason }),
+    });
+  }
+
+  async suspendUser(userId, duration, reason) {
+    return this.request('/moderation/suspend-user', {
+      method: 'POST',
+      body: JSON.stringify({ userId, duration, reason }),
+    });
+  }
+
+  async banUser(userId, reason) {
+    return this.request('/moderation/ban-user', {
+      method: 'POST',
+      body: JSON.stringify({ userId, reason }),
+    });
+  }
+
+  async getModerationActions(limit = 50, offset = 0) {
+    return this.request(`/moderation/actions?limit=${limit}&offset=${offset}`);
+  }
+
+  async getModerationSupportRooms() {
+    return this.request('/moderation/support-rooms');
+  }
 }
 
 // Create singleton instance

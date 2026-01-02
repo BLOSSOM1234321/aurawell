@@ -4,14 +4,18 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  Users, Send, Loader2, AlertTriangle, Shield, MoreVertical
+  Users, Send, Loader2, AlertTriangle, Shield, MoreVertical, Flag
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { SupportRoom, SupportRoomMessage, SupportRoomMember } from '@/api/entities';
+import { SupportRoom, SupportRoomMessage, SupportRoomMember, ContentViolationReport } from '@/api/entities';
 import BackHeader from '@/components/navigation/BackHeader';
 import { format } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import RoomPostsFeed from '@/components/community/RoomPostsFeed';
+import { analyzeTextForRisk, BehavioralSignalTracker, logCrisisEvent } from '@/utils/crisisDetection';
+import SafetyModal from '@/components/safety/SafetyModal';
+import MediumRiskBanner from '@/components/safety/MediumRiskBanner';
+import LowRiskExerciseSuggestion from '@/components/safety/LowRiskExerciseSuggestion';
 
 export default function SupportRoomChat() {
   const { roomId } = useParams();
@@ -25,6 +29,16 @@ export default function SupportRoomChat() {
   const [user, setUser] = useState(null);
   const messagesEndRef = useRef(null);
   const pollIntervalRef = useRef(null);
+
+  // Crisis detection state
+  const [tracker, setTracker] = useState(null);
+  const [showSafetyModal, setShowSafetyModal] = useState(false);
+  const [showMediumBanner, setShowMediumBanner] = useState(false);
+  const [showLowSuggestion, setShowLowSuggestion] = useState(false);
+
+  // Content flagging state
+  const [reportingMessageId, setReportingMessageId] = useState(null);
+  const [reportReason, setReportReason] = useState('');
 
   useEffect(() => {
     loadData();
@@ -44,6 +58,13 @@ export default function SupportRoomChat() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Initialize crisis detection tracker
+  useEffect(() => {
+    if (user) {
+      setTracker(new BehavioralSignalTracker(user.id));
+    }
+  }, [user]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -122,6 +143,48 @@ export default function SupportRoomChat() {
 
     if (!messageText.trim() || !user) return;
 
+    // CRISIS DETECTION
+    const riskAnalysis = analyzeTextForRisk(messageText);
+
+    if (tracker) {
+      tracker.addMessage(messageText, riskAnalysis.level);
+      const behavioralRisk = tracker.getBehavioralRisk();
+
+      // Check if behavioral signals escalate risk
+      if (behavioralRisk.recommendation === 'ESCALATE' && riskAnalysis.level !== 'HIGH') {
+        riskAnalysis.level = 'MEDIUM'; // Elevate to at least MEDIUM
+      }
+    }
+
+    // Log crisis event
+    if (riskAnalysis.level !== 'NONE') {
+      logCrisisEvent({
+        userId: user.id,
+        context: 'support_room_chat',
+        roomId: roomId,
+        riskLevel: riskAnalysis.level,
+        text: messageText.substring(0, 100), // First 100 chars for privacy
+        matches: riskAnalysis.matches
+      });
+    }
+
+    // HIGH RISK - Block send, show mandatory safety modal
+    if (riskAnalysis.level === 'HIGH') {
+      setShowSafetyModal(true);
+      return; // DO NOT SEND MESSAGE
+    }
+
+    // MEDIUM RISK - Allow send but show banner
+    if (riskAnalysis.level === 'MEDIUM') {
+      setShowMediumBanner(true);
+    }
+
+    // LOW RISK - Allow send, show gentle suggestion
+    if (riskAnalysis.level === 'LOW') {
+      setShowLowSuggestion(true);
+    }
+
+    // Continue with normal send logic...
     if (messageText.trim().length > 1000) {
       toast.error('Message is too long (max 1000 characters)');
       return;
@@ -143,6 +206,26 @@ export default function SupportRoomChat() {
       toast.error('Failed to send message. Please try again.');
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleReportMessage = async (messageId, reason) => {
+    try {
+      await ContentViolationReport.create({
+        reporterId: user.id,
+        contentType: 'support_room_message',
+        contentId: messageId,
+        roomId: roomId,
+        reason: reason,
+        status: 'pending'
+      });
+
+      toast.success('Message reported. A moderator will review it.');
+      setReportingMessageId(null);
+      setReportReason('');
+    } catch (error) {
+      console.error('Failed to report message:', error);
+      toast.error('Failed to report message');
     }
   };
 
@@ -206,6 +289,72 @@ export default function SupportRoomChat() {
         </div>
       </div>
 
+      {/* Safety Interventions */}
+      {showSafetyModal && (
+        <SafetyModal
+          onClose={() => {
+            setShowSafetyModal(false);
+            setMessageText(''); // Clear the high-risk message
+          }}
+          userRegion="US"
+          context="support_room"
+          mandatory={true}
+        />
+      )}
+
+      {showMediumBanner && (
+        <MediumRiskBanner
+          onDismiss={() => setShowMediumBanner(false)}
+        />
+      )}
+
+      {showLowSuggestion && (
+        <LowRiskExerciseSuggestion
+          onDismiss={() => setShowLowSuggestion(false)}
+        />
+      )}
+
+      {/* Report Modal */}
+      {reportingMessageId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-96 p-6">
+            <h3 className="font-semibold mb-4">Report Message</h3>
+            <select
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+              className="w-full border rounded p-2 mb-4"
+            >
+              <option value="">Select reason...</option>
+              <option value="harassment">Harassment</option>
+              <option value="spam">Spam</option>
+              <option value="self-harm">Self-harm concern</option>
+              <option value="hate-speech">Hate speech</option>
+              <option value="misinformation">Misinformation</option>
+              <option value="other">Other</option>
+            </select>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => handleReportMessage(reportingMessageId, reportReason)}
+                disabled={!reportReason}
+                className="flex-1"
+              >
+                Submit Report
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setReportingMessageId(null);
+                  setReportReason('');
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
       {/* Tabs for Chat and Posts */}
       <Tabs defaultValue="chat" className="flex-1 flex flex-col">
         <TabsList className="grid w-full grid-cols-2 max-w-4xl mx-auto">
@@ -256,6 +405,16 @@ export default function SupportRoomChat() {
                             {format(new Date(message.createdAt), 'h:mm a')}
                           </p>
                         </div>
+
+                        {!isOwnMessage && (
+                          <button
+                            onClick={() => setReportingMessageId(message.id)}
+                            className="text-gray-400 hover:text-red-500 text-xs mt-1 flex items-center gap-1"
+                          >
+                            <Flag className="w-3 h-3" />
+                            Report
+                          </button>
+                        )}
                       </div>
                     </div>
                   );
