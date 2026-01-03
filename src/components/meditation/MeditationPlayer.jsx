@@ -476,52 +476,6 @@ export default function MeditationPlayer({ meditation, onComplete, onBack, isLoa
             </div>
           </div>
         )}
-
-        {/* Speed Control */}
-        {voiceOverUrl && (
-          <div className="flex items-center justify-center gap-2 pt-2">
-            <span className="text-xs text-gray-500">Speed:</span>
-            {[0.8, 0.9, 1.0, 1.1].map((speed) => (
-              <button
-                key={speed}
-                onClick={() => handleSpeedChange(speed)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                  voiceSpeed === speed
-                    ? 'bg-purple-500 text-white shadow-sm'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {speed}x
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Volume Control */}
-        {backgroundMusicUrl && (
-          <div className="flex items-center justify-center gap-3 pt-2">
-            <button
-              onClick={toggleAudio}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              title={audioEnabled ? "Mute music" : "Unmute music"}
-            >
-              {audioEnabled ? <Volume2 className="w-5 h-5 text-gray-600" /> : <VolumeX className="w-5 h-5 text-gray-400" />}
-            </button>
-            {audioEnabled && (
-              <>
-                <span className="text-xs text-gray-500">Volume:</span>
-                <Slider
-                  value={[audioVolume]}
-                  onValueChange={(values) => setAudioVolume(values[0])}
-                  max={100}
-                  min={0}
-                  step={5}
-                  className="w-32"
-                />
-              </>
-            )}
-          </div>
-        )}
       </CardHeader>
 
       <CardContent className="space-y-6">
