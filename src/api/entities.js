@@ -355,6 +355,24 @@ export const JournalEntry = {
     }
   },
 
+  async list(orderBy = '-created_date', limit = 50) {
+    try {
+      const response = await api.getJournals();
+      let entries = response.data || [];
+
+      // Sort by created_at
+      if (orderBy === '-created_date') {
+        entries = entries.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      }
+
+      // Limit results
+      return entries.slice(0, limit);
+    } catch (error) {
+      console.error('JournalEntry.list error:', error);
+      return [];
+    }
+  },
+
   async create(data) {
     try {
       const response = await api.createJournal(data);
@@ -471,6 +489,17 @@ function createPlaceholderEntity(name) {
       const filtered = items.filter(i => i.id !== id);
       localStorage.setItem(`aurawell_${name}`, JSON.stringify(filtered));
       return { success: true };
+    },
+    async list(orderBy = '-createdAt', limit = 50) {
+      let items = JSON.parse(localStorage.getItem(`aurawell_${name}`) || '[]');
+
+      // Sort by createdAt
+      if (orderBy === '-createdAt') {
+        items = items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      }
+
+      // Limit results
+      return items.slice(0, limit);
     },
   };
 }
