@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { X, Sparkles, Lightbulb, AlertTriangle } from 'lucide-react';
+import { X } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 
 export default function DreamDetail({ dream, onClose }) {
@@ -60,34 +60,7 @@ export default function DreamDetail({ dream, onClose }) {
               </div>
             </div>
           )}
-
-          {dream.ai_interpretation && (
-            <div className="space-y-6 pt-6 border-t">
-              <div className="p-4 bg-blue-50 rounded-2xl border border-blue-200">
-                <h3 className="font-bold text-lg text-blue-800 mb-2 flex items-center gap-2">
-                  <Sparkles className="w-5 h-5" />AI Interpretation
-                </h3>
-                <p className="text-blue-900/80 leading-relaxed whitespace-pre-wrap">{dream.ai_interpretation}</p>
-              </div>
-              
-              <div className="p-4 bg-green-50 rounded-2xl border border-green-200">
-                <h3 className="font-bold text-lg text-green-800 mb-2 flex items-center gap-2">
-                  <Lightbulb className="w-5 h-5" />Reflective Prompts
-                </h3>
-                <ul className="list-disc list-inside space-y-1 text-green-900/80">
-                  {dream.reflective_prompts.map((prompt, i) => <li key={i}>{prompt}</li>)}
-                </ul>
-              </div>
-            </div>
-          )}
         </main>
-        
-        <footer className="p-4 border-t bg-gray-50 rounded-b-3xl">
-            <div className="p-3 bg-yellow-50 rounded-xl text-yellow-800 text-xs flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 flex-shrink-0"/>
-                <span>AI interpretations are based on common symbols and are for reflection only. They are not a substitute for professional psychological advice.</span>
-            </div>
-        </footer>
       </motion.div>
     </motion.div>
   );
