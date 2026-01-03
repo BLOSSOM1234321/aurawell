@@ -355,13 +355,13 @@ export const JournalEntry = {
     }
   },
 
-  async list(orderBy = '-created_date', limit = 50) {
+  async list(orderBy = '-created_at', limit = 50) {
     try {
       const response = await api.getJournals();
       let entries = response.data || [];
 
       // Sort by created_at
-      if (orderBy === '-created_date') {
+      if (orderBy === '-created_at') {
         entries = entries.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       }
 

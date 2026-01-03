@@ -64,7 +64,7 @@ export default function Journal() {
   // Personal Journal Functions
   const loadEntries = useCallback(async () => {
     setIsLoading(true);
-    const journalEntries = await JournalEntry.list("-created_date", 50);
+    const journalEntries = await JournalEntry.list("-created_at", 50);
     setEntries(journalEntries);
     setIsLoading(false);
   }, []); 
@@ -355,7 +355,7 @@ export default function Journal() {
                                 {entry.title || `Entry from ${format(new Date(entry.date), 'MMM d')}`}
                               </h3>
                               <p className="text-xs text-gray-500">
-                                {format(new Date(entry.created_date), 'MMM d • h:mm a')}
+                                {format(new Date(entry.created_at), 'MMM d • h:mm a')}
                               </p>
                             </div>
                             
@@ -471,7 +471,7 @@ export default function Journal() {
                                 {entry.title || `Entry from ${format(new Date(entry.date), 'MMM d')}`}
                               </h3>
                               <p className="text-xs text-gray-500">
-                                {format(new Date(entry.created_date), 'MMM d • h:mm a')}
+                                {format(new Date(entry.created_at), 'MMM d • h:mm a')}
                               </p>
                             </div>
                             
