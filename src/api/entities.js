@@ -94,7 +94,7 @@ export const SupportRoom = {
   async findById(id) {
     // Check if user is a moderator
     const userData = localStorage.getItem('aurawell_current_user');
-    const isModerator = userData && JSON.parse(userData).email === 'blossomalabor132@gmail.com';
+    const isModerator = userData && JSON.parse(userData).email === 'damia11232@gmail.com';
 
     if (isModerator) {
       // Moderators can view ALL rooms

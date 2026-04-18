@@ -123,7 +123,7 @@ export default function Layout({ children, currentPageName }) {
   const currentRoute = getCurrentRoute();
 
   // Check if user is a moderator
-  const isModerator = user?.email === 'blossomalabor132@gmail.com';
+  const isModerator = user?.email === 'damia11232@gmail.com';
 
   // Bottom navigation items - dynamically include moderator if user is a moderator
   const navigationItems = useMemo(() => {

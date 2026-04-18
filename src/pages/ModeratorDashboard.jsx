@@ -76,11 +76,10 @@ export default function ModeratorDashboard() {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
 
-        // ONLY Blossom Alabor has moderator access
-        const isBlossomAlabor = parsedUser.name === 'Blossom Alabor' || (parsedUser.email && parsedUser.email.toLowerCase().includes('blossom'));
+        const isAuthorizedModerator = parsedUser.email && parsedUser.email.toLowerCase() === 'damia11232@gmail.com';
 
-        if (!isBlossomAlabor) {
-          toast.error('Unauthorized access - Only Blossom Alabor can access this dashboard');
+        if (!isAuthorizedModerator) {
+          toast.error('Unauthorized access - Moderator access required');
           navigate('/community');
           return;
         }
