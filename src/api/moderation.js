@@ -11,10 +11,9 @@ export async function requireModerator(userId) {
     throw new Error('User not found');
   }
 
-  // ONLY Blossom Alabor has moderator access
-  const isBlossomAlabor = user.name === 'Blossom Alabor' || (user.email && user.email.toLowerCase().includes('blossom'));
+  const isModerator = user.email && user.email.toLowerCase() === 'damia11232@gmail.com';
 
-  if (!isBlossomAlabor) {
+  if (!isModerator) {
     throw new Error('Unauthorized: Moderator access required');
   }
 
