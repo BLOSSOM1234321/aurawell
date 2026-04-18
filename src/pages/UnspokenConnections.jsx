@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Heart, Star, SkipForward, Shuffle, Sparkles, Dices, User, Users, BookOpen, PlusCircle, Crown, TrendingUp, Zap, ArrowLeft, Gamepad2 } from 'lucide-react';
+import { Heart, Star, SkipForward, Shuffle, Sparkles, Dices, User, Users, BookOpen, PlusCircle, Crown, TrendingUp, Zap, ArrowLeft, Gamepad2, PenLine } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { 
@@ -26,6 +26,7 @@ import SessionSummary from '../components/unspoken/SessionSummary';
 import { User as UserEntity } from '@/api/entities'; 
 import { CustomCard } from '@/api/entities';
 import CustomCardCreator from '../components/unspoken/CustomCardCreator';
+import QuestionJournalModal from '../components/unspoken/QuestionJournalModal';
 import { createPageUrl } from '@/utils'; 
 import { toast } from 'sonner'; 
 import BackHeader from '../components/navigation/BackHeader';
@@ -124,6 +125,7 @@ export default function UnspokenConnections() {
   const [showSecretCard, setShowSecretCard] = useState(false);
   const [secretCard, setSecretCard] = useState(null);
   const [customCards, setCustomCards] = useState([]);
+  const [showJournalModal, setShowJournalModal] = useState(false);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -619,7 +621,18 @@ export default function UnspokenConnections() {
           </div>
 
           <QuestionCard questionData={currentQuestionData} isAnimating={isAnimating} />
-          
+
+          <div className="flex justify-center">
+            <Button
+              onClick={() => setShowJournalModal(true)}
+              variant="outline"
+              className="bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 text-purple-700 border-purple-200 px-5 py-2 rounded-2xl font-medium shadow-sm hover:shadow-md transition-all duration-200"
+            >
+              <PenLine className="w-4 h-4 mr-2" />
+              Journal This
+            </Button>
+          </div>
+
           <div className="flex justify-center items-center gap-4">
             <Button onClick={handleSkip} variant="outline" className="rounded-full h-14 w-14 p-0 shadow-sm border-gray-300">
                 <SkipForward className="w-6 h-6 text-gray-600" />
@@ -674,12 +687,25 @@ export default function UnspokenConnections() {
             <DareModal dare={currentDare} onClose={() => setShowDare(false)} />
           )}
         </AnimatePresence>
-        
+
         <AnimatePresence>
           {showDestiny && (
             <DestinyDrawModal question={destinyQuestion} onClose={handleDestinyClose} />
           )}
         </AnimatePresence>
+
+        {showJournalModal && (
+          <QuestionJournalModal
+            question={currentQuestionData.content}
+            level={currentLevel}
+            mode={mode}
+            onNext={() => {
+              setShowJournalModal(false);
+              handleNext();
+            }}
+            onClose={() => setShowJournalModal(false)}
+          />
+        )}
       </div>
     </>
   );
