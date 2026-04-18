@@ -19,7 +19,7 @@ export default function AdminTools() {
     }
   };
 
-  const isBlossomAlabor = currentUser?.name === 'Blossom Alabor' || (currentUser?.email && currentUser.email.toLowerCase().includes('blossom'));
+  const isBlossomAlabor = currentUser?.email && currentUser.email.toLowerCase() === 'damia11232@gmail.com';
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">

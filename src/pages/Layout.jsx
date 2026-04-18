@@ -68,6 +68,8 @@ export default function Layout({ children, currentPageName }) {
         const currentUserData = localStorage.getItem('aurawell_current_user');
         if (currentUserData) {
           const currentUser = JSON.parse(currentUserData);
+          // Enforce is_moderator based on email, never trust stored value
+          currentUser.is_moderator = currentUser?.email?.toLowerCase() === 'damia11232@gmail.com';
           setUser(currentUser);
           setActiveTheme(currentUser?.active_theme || 'sunset');
         } else {

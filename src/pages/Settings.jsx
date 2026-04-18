@@ -88,12 +88,14 @@ export default function Settings() {
     }
   };
 
-  // Check if current user is blossom alabor (developer account)
-  const isDeveloper = user?.name?.toLowerCase() === 'blossom alabor';
+  const isDeveloper = user?.email?.toLowerCase() === 'damia11232@gmail.com';
 
-  // Developer toggle functions
   const toggleModeratorMode = () => {
     const currentUser = JSON.parse(localStorage.getItem('aurawell_current_user'));
+    if (currentUser?.email?.toLowerCase() !== 'damia11232@gmail.com') {
+      toast.error('Only the authorized moderator account can toggle this.');
+      return;
+    }
     currentUser.is_moderator = !currentUser.is_moderator;
     localStorage.setItem('aurawell_current_user', JSON.stringify(currentUser));
     loadUserData();
